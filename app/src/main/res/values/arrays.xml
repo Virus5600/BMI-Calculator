@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="weight_types">
+        <item>kg</item>
+        <item>lbs</item>
+    </string-array>
+
+    <string-array name="height_types">
+        <item>cm</item>
+        <item>ft/in</item>
+    </string-array>
+</resources>

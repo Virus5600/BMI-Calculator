@@ -1,0 +1,12 @@
+<resources>
+	<!-- LABELS -->
+	<string name="app_name">BMI Calculator</string>
+	<string name="bmi_description">Body mass index (BMI) is a measure of body fat based on height and weight that applies to adult men and women.</string>
+	<string name="weight_label">Weight</string>
+	<string name="weight_type_label">Weight Measurement</string>
+	<string name="height_label">Height</string>
+	<string name="height_type_label">Height Measurement</string>
+
+	<!-- BUTTONS -->
+	<string name="submit">Submit</string>
+</resources>
