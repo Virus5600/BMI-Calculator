@@ -1,5 +1,10 @@
 package com.satch_navida.myapplication.validation.rules;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.text.MessageFormat;
+import java.util.Arrays;
 import java.util.HashMap;
 
 /**
@@ -43,7 +48,7 @@ public abstract class Rule implements RuleInterface {
 	/**
 	 * A constant array of strings containing the keys of what the {@link #validate()} method should return.
 	 */
-	public static final String[] VALIDATED_KEYS = new String[]{"validate", "message", "runOtherValidation"};
+	public static final String[] VALIDATED_KEYS = new String[]{"valid", "message", "runOtherValidation"};
 
 	// CONSTRUCTORS
 
@@ -56,34 +61,16 @@ public abstract class Rule implements RuleInterface {
 	 * @param message A message that will be displayed when the test fails.
 	 * @param validatorValues An array of {@link Object}s that will be used to test against the {@code value}.
 	 */
-	public Rule(String key, Object value, String message, Object[] validatorValues) {
+	public Rule(@NotNull String key, @NotNull Object value, @Nullable String message, @Nullable Object[] validatorValues) {
+		if (key == null)
+			throw new NullPointerException("\"key\" should not be null.");
+		if (value == null)
+			throw new NullPointerException("\"value\" should not be null.");
+
 		this.key = key;
 		this.value = value;
-		this.message = message;
+		this.message = message == null ? this.message : message;
 		this.validatorValues = validatorValues;
-	}
-
-	/**
-	 * Creates an instance of {@link Rule}, containing all the necessary parameters: the
-	 * {@code key} and {@code value}, and some optional parameter: {@code message}.<br>
-	 *
-	 * @param key A unique identifier (ID) of value being tested.
-	 * @param value The value that will be tested.
-	 * @param message A message that will be displayed when the test fails.
-	 */
-	public Rule(String key, Object value, String message) {
-		this(key, value, message, null);
-	}
-
-	/**
-	 * Creates an instance of {@link Rule}, containing all the necessary parameters: the
-	 * {@code key} and {@code value}.<br>
-	 *
-	 * @param key A unique identifier (ID) of value being tested.
-	 * @param value The value that will be tested.
-	 */
-	public Rule(String key, Object value) {
-		this(key, value, null, null);
 	}
 
 	// PUBLIC METHODS
@@ -107,6 +94,21 @@ public abstract class Rule implements RuleInterface {
 	 */
 	public boolean isValid() {
 		return this.valid;
+	}
+
+	/**
+	 * @inheritDoc
+	 */
+	@Override
+	public String toString() {
+		return String.format(
+				"[%1$s]: {key: \"%2$s\", value: \"%3$s\", message: \"%4$s\", validatorValues: \"%5$s\"}",
+				this.getClass().getSimpleName(),
+				this.key,
+				this.value,
+				this.message,
+				Arrays.toString(this.validatorValues)
+		);
 	}
 
 	// PROTECTED METHODS

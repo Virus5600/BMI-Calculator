@@ -1,5 +1,8 @@
 package com.satch_navida.myapplication.validation.rules;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.text.MessageFormat;
 import java.util.HashMap;
 
@@ -24,12 +27,8 @@ public class Max extends Rule implements RuleInterface {
 	 * @param message A message that will be displayed when the test fails.
 	 * @param validatorValues An array of {@link Object}s that will be used to test against the {@code value}.
 	 */
-	public Max(String key, Object value, String message, Object[] validatorValues) {
+	public Max(@NotNull String key, @NotNull Object value, @Nullable String message, @Nullable Object[] validatorValues) {
 		super(key, value, message, validatorValues);
-	}
-
-	public Max(String key, Object value, Object[] validatorValues) {
-		super(key, value, null, validatorValues);
 	}
 
 	// PUBLIC METHOD
@@ -46,7 +45,7 @@ public class Max extends Rule implements RuleInterface {
 			exception = new IllegalArgumentException(MessageFormat.format("Not enough validator value passed:\tNeeds 1, only {0} is passed.", this.validatorValues.length));
 		}
 		else if (!java.lang.Boolean.parseBoolean(
-				new Numeric("max_value", this.validatorValues[0])
+				new Numeric("max_value", this.validatorValues[0], null, null)
 						.validate()
 						.get(Rule.VALIDATED_KEYS[0])
 						.toString() )) {
@@ -58,7 +57,7 @@ public class Max extends Rule implements RuleInterface {
 			throw exception;
 
 		if (java.lang.Boolean.parseBoolean(
-				new Numeric(this.key, this.value)
+				new Numeric(this.key, this.value, null, null)
 						.validate()
 						.get(Rule.VALIDATED_KEYS[0])
 						.toString() )) {

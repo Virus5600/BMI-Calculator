@@ -1,7 +1,10 @@
 package com.satch_navida.myapplication.validation;
 
+import android.util.Log;
+
 import com.satch_navida.myapplication.validation.rules.Rule;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -17,7 +20,7 @@ public class Validator {
 	/**
 	 * A private global variable container for all the rules passed to this.
 	 */
-	private Map<String, String> ruleList;
+	private Map<String, String[]> ruleList;
 	/**
 	 * A private global variable container for all the messages passed to this.
 	 */
@@ -27,6 +30,10 @@ public class Validator {
 	 */
 	private MessageBag errorList = new MessageBag();
 	/**
+	 * A private global variable container for all the valid key-value pairs.
+	 */
+	private Map<String, Object> validSets = new HashMap<String, Object>();
+	/**
 	 * A private global variable container that determines if the validation has been run already.
 	 */
 	private boolean validationDone = false;
@@ -34,36 +41,22 @@ public class Validator {
 	 * A private global variable container, identifying if this validator's validation has failed.
 	 */
 	private boolean failed = false;
-	private Map<String, Object> validated = new HashMap<String, Object>();
+	/**
+	 * A private global variable container, which will be used as a container for all the already validated keys.
+	 */
+	private ArrayList<String> validated = new ArrayList<String>();
 
 	// CONSTRUCTORS
 
 	/**
 	 * Creates an instance of {@code Validator}.<br>
-	 * <br>
-	 * <ul>
-	 *     <li>
-	 *         <b>Example A.1: </b> {@link com.satch_navida.myapplication.validation.rules.Required Required}
-	 *     </li>
-	 *
-	 *     <li>
-	 *         <b>Example A.2:</b> {@link com.satch_navida.myapplication.validation.rules.Numeric Numeric}
-	 *     </li>
-	 *
-	 *     <li>
-	 *         <b>Example B.1:</b> {@link com.satch_navida.myapplication.validation.rules.Min Min}
-	 *     </li>
-	 * </ul>
 	 *
 	 * @param values A {@link Map} object containing a key-value pair for the keys and its value.
 	 * @param rules A {@link Map} object containing a key-value pair for the key's rules. A rule
-	 *                 must be one of the classes that extends {@link Rule} class, or a custom class
-	 *                 that also extends {@code Rule} which takes in 1 parameter (value) and returns
-	 *                 a {@link Map} object with 3 keys derived from {@link Rule#VALIDATED_KEYS}.
-	 *                 An example of a function is <b>Example A.1</b>, <b>Example A.2</b>, and <b>Example B.1</b>.
+	 *                 must be one of the classes that extends {@link Rule} class.
 	 * @param messages A {@link Map} object containing a key-value pair for the keys' messages
 	 */
-	public Validator(Map<String, Object> values, Map<String, String> rules, Map<String, String> messages) {
+	public Validator(Map<String, Object> values, Map<String, String[]> rules, Map<String, String> messages) {
 		this.valueList = values;
 		this.ruleList = rules;
 		this.msgList = messages;
@@ -71,29 +64,12 @@ public class Validator {
 
 	/**
 	 * Creates an instance of {@code Validator}.<br>
-	 * <br>
-	 * <ul>
-	 *     <li>
-	 *         <b>Example A.1: </b> {@link com.satch_navida.myapplication.validation.rules.Required Required}
-	 *     </li>
 	 *
-	 *     <li>
-	 *         <b>Example A.2:</b> {@link com.satch_navida.myapplication.validation.rules.Numeric Numeric}
-	 *     </li>
-	 *
-	 *     <li>
-	 *         <b>Example B.1:</b> {@link com.satch_navida.myapplication.validation.rules.Min Min}
-	 *     </li>
-	 * </ul>
-	 *
-	 * @param values A {@link Map} object containing a key-value pair for the fields and its value.
+	 * @param values A {@link Map} object containing a key-value pair for the keys and its value.
 	 * @param rules A {@link Map} object containing a key-value pair for the key's rules. A rule
-	 *                 must be one of the classes that extends {@link Rule} class, or a custom class
-	 *                 that also extends {@code Rule} which takes in 1 parameter (value) and returns
-	 *                 a {@link Map} object with 3 keys derived from {@link Rule#VALIDATED_KEYS}.
-	 *                 An example of a function is <b>Example A.1</b>, <b>Example A.2</b>, and <b>Example B.1</b>.
+	 *                 must be one of the classes that extends {@link Rule} class.
 	 */
-	public Validator (Map<String, Object> values, Map<String, String> rules) {
+	public Validator (Map<String, Object> values, Map<String, String[]> rules) {
 		this(values, rules, null);
 	}
 
@@ -136,7 +112,7 @@ public class Validator {
 		if (!this.validationDone)
 			this.runValidation();
 
-		return this.validated;
+		return this.validSets;
 	}
 
 	/**
@@ -172,7 +148,7 @@ public class Validator {
 	 * the message of the field.
 	 */
 	public ArrayList<String> get(String key) {
-		return this.errorList.get(key);
+		return new ArrayList<String>(this.errorList.get(key).values());
 	}
 
 	/**
@@ -195,7 +171,7 @@ public class Validator {
 
 		vl.keySet().removeAll(new HashSet<String>(Arrays.asList(this.invalidFields())));
 
-		return (String[]) vl.keySet().toArray();
+		return Arrays.copyOf(vl.keySet().toArray(), vl.keySet().size(), String[].class);
 	}
 
 	/**
@@ -212,6 +188,88 @@ public class Validator {
 	 * Runs the entire validation algorithm.
 	 */
 	private void runValidation() {
+		// Iterate through the list of values provided.
+		this.valueList.forEach((String field, Object value) -> {
+			// Fetches the rules for iteration...
+			String[] rules = this.ruleList.get(field);
+			// Then iterates over them using for-each
+			for (String rule : rules) {
+				String[] validatorValues = rule.split(":");
+				// Fetches the rule
+				rule = validatorValues[0];
+				// And if there are validator values present, overwrite it to the values variable
+				if (validatorValues.length > 1)
+					validatorValues = Arrays.copyOfRange(validatorValues, 1, validatorValues.length);
+				else
+					validatorValues = null;
 
+				try {
+					// Fetches the class dynamically using the rule name.
+					Class clazz = Class.forName(this.getClass().getPackageName() + ".rules." + rule);
+					// Then build the key for fetching the validation message for the current rule.
+					String msgKey = String.format(
+							"%1$s.%2$s",
+							field,
+							rule
+					);
+
+					/*
+					Fetch the constructor first using the dynamically acquired class, then proceed
+					to create a new instance under it super class "Rule".
+					 */
+					Rule r = (Rule) clazz.getDeclaredConstructor(
+							String.class,
+							Object.class,
+							String.class,
+							Object[].class)
+							.newInstance(
+									field,
+									this.valueList.get(field),
+									this.msgList.get(msgKey),
+									validatorValues
+							);
+
+					/*
+					Call the .validate() method for the subclass of Rule using the dynamically acquired
+					class from earlier. This will allow us to validate the values respectively.
+					 */
+					HashMap<String, Object> response = (HashMap<String, Object>) r.getClass().asSubclass(clazz)
+							.getMethod("validate")
+							.invoke(r);
+
+					// If the rule failed, immediately fail the entire validation.
+					if (!(boolean) response.get("valid")) {
+						this.failed = true;
+						// Insert the error message to the message bag.
+						this.errorList.add(msgKey, (String) response.get("message"));
+
+						/*
+						If the response returned a false value for "runOtherValidation", skip the entire
+						field and proceed to the next field.
+						 */
+						if (!(boolean) response.get("runOtherValidation"))
+							continue;
+					}
+					else {
+						// Add the field to the list of validated inputs.
+						this.validSets.put(field, value);
+					}
+				} catch (ClassNotFoundException e) {
+					Log.e("ERROR", e.getMessage(), e);
+				} catch (NoSuchMethodException e) {
+					Log.e("ERROR", e.getMessage(), e);
+				} catch (InvocationTargetException e) {
+					Log.e("ERROR", e.getMessage(), e);
+				} catch (IllegalAccessException e) {
+					Log.e("ERROR", e.getMessage(), e);
+				} catch (InstantiationException e) {
+					Log.e("ERROR", e.getMessage(), e);
+				}
+			}
+		});
+
+		// Marks this instance as validation done.
+		if (!this.validationDone)
+			this.validationDone = true;
 	}
 }

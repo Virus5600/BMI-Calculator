@@ -1,10 +1,18 @@
 package com.satch_navida.myapplication.validation;
 
+import android.util.Log;
+
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * A message bag is an instance of object containing various messages for different keys. It is
@@ -23,7 +31,7 @@ public class MessageBag {
 	 * A map that contains all the messages, serving as a replacement for JSONs as JSON aren't easily
 	 * traversable unlike maps in the Java context.
 	 */
-	private HashMap<String, ArrayList<String>> messages;
+	private Map<String, Map<String, String>> messages;
 
 	// CONSTRUCTORS
 
@@ -32,9 +40,10 @@ public class MessageBag {
 	 * parameter.<br>
 	 *
 	 * @param messages A map containing key-value pair whereas the {@code key} is the identifier while
-	 *                 {@code value} is an {@link ArrayList} containing a list of {@code String}s.
+	 *                 {@code value} is a {@link Map} containing a key-value pair of {@code String}s where in this
+	 *                 context, the {@code key} is the rule while the {@code value} is the message.
 	 */
-	public MessageBag(HashMap<String, ArrayList<String>> messages) {
+	public MessageBag(HashMap<String, Map<String, String>> messages) {
 		this.messages = messages;
 	}
 
@@ -42,7 +51,7 @@ public class MessageBag {
 	 * Creates an empty instance of {@link MessageBag}.
 	 */
 	public MessageBag() {
-		this(new HashMap<>());
+		this(new HashMap<String, Map<String, String>>());
 	}
 
 	// PUBLIC METHODS
@@ -54,7 +63,8 @@ public class MessageBag {
 	 */
 	@SuppressWarnings("ConstantConditions")
 	public String[] keys() {
-		return (String[]) this.messages.keySet().toArray();
+		Object[] keys = this.messages.keySet().toArray();
+		return Arrays.copyOf(keys, keys.length, String[].class);
 	}
 
 	/**
@@ -67,12 +77,26 @@ public class MessageBag {
 	 * @return MessageBag This instance of {@code MessageBag}.
 	 */
 	public MessageBag add(String key, String message) {
-		ArrayList<String> currentMessages = this.messages.get(key);
+		String rule = key.split("\\.")[1];
+		key = key.split("\\.")[0];
 
-		if (currentMessages == null)
-			currentMessages = new ArrayList<>();
+		// If no such key exists in the current message
+		if (!this.messages.containsKey(key))
+			this.messages.put(key, new HashMap<String, String>());
 
-		currentMessages.add(message);
+		Map<String, String> currentMessages = this.messages.get(key);
+
+		// Checks if the rule exists or if it is empty. If one of those was true, the message will be placed.
+		if (currentMessages.containsKey(rule)) {
+			if (currentMessages.get(rule).isEmpty()) {
+				currentMessages.put(rule, message);
+			}
+		}
+		else {
+			currentMessages.put(rule, message);
+		}
+
+		// Then finalizes it by inserting it to the messages map.
 		this.messages.put(key, currentMessages);
 
 		return this;
@@ -86,12 +110,13 @@ public class MessageBag {
 	 *
 	 * @return MessageBag This instance of {@code MessageBag}.
 	 */
-	public MessageBag merge(HashMap<String, ArrayList<String>> messages) {
+	public MessageBag merge(HashMap<String, Map<String, String>> messages) {
 		return this.merge(new MessageBag(messages));
 	}
 
 	/**
-	 * Merge a new array of messages into this message bag.
+	 * Merge all {@link MessageBag} into this single instance. The last parameter supplied to {@code messages}
+	 * will be used and will overwrite all messages before it if same key and
 	 *
 	 * @param messages An instance of {@link MessageBag} containing all the messages that will be
 	 *                 merged with this {@code MessageBag}.
@@ -99,20 +124,22 @@ public class MessageBag {
 	 * @return MessageBag This instance of {@code MessageBag}.
 	 */
 	public MessageBag merge(MessageBag... messages) {
-		ConcurrentHashMap<String, ArrayList<String>> msgHolder = new ConcurrentHashMap<>();
+		ConcurrentMap<String, Map<String, String>> cms = (ConcurrentMap<String, Map<String, String>>) Map.copyOf(this.messages);
 
+		// Iterate through the message bags
 		for (MessageBag m : messages) {
-			m.get().entrySet().parallelStream().forEach(e ->
-				msgHolder.merge(e.getKey(), e.getValue(), (v1, v2) -> {
-					Set<String> set = new TreeSet<>(v1);
-					set.addAll(v2);
-					return new ArrayList<>(set);
-				})
-			);
+			// Iterate through each key-value (String - Map<>) pairs
+			m.get().entrySet().parallelStream().forEach(pair1 -> {
+				// Merges the provided pair to the message var of this instance
+				cms.merge(pair1.getKey(), pair1.getValue(), (v1, v2) -> {
+					// Puts all the contents of the new message bag to this instance
+					v1.putAll(v2);
+					return v1;
+				});
+			});
 		}
 
-		this.messages = new HashMap<>();
-		this.messages.putAll(msgHolder);
+		this.messages = cms;
 
 		return this;
 	}
@@ -130,23 +157,31 @@ public class MessageBag {
 		if (!this.messages.containsKey(key))
 			return "";
 
-		ArrayList<String> keyMessages = this.messages.get(key);
+		Map<String, String> keyMessages = this.messages.get(key);
 
-		if (keyMessages == null)
+		if (keyMessages == null) {
 			return "";
+		}
+		else {
+			String[] subkeys = Arrays.copyOf(keyMessages.keySet().toArray(), keyMessages.keySet().size(), String[].class);
 
-		return keyMessages.size() > 0 ? keyMessages.get(0) : "";
+			if (subkeys.length > 0)
+				return keyMessages.get(subkeys[0]);
+			else
+				return "";
+		}
 	}
 
 	public String get(String key, int index) {
-		ArrayList<String> keyMessage = this.messages.get(key);
+		if (!this.messages.containsKey(key))
+			return "";
 
-		if (keyMessage == null)
-			throw new NullPointerException("Such key does not exists.");
-		if (index >= keyMessage.size())
+		Map<String, String> keyMessage = this.messages.get(key);
+
+		if (index >= keyMessage.keySet().size())
 			throw new IndexOutOfBoundsException("Provided index is greater than the number of messages present.");
 
-		return keyMessage.get(index);
+		return keyMessage.get(keyMessage.keySet().toArray()[index]);
 	}
 
 	/**
@@ -156,10 +191,30 @@ public class MessageBag {
 	 *
 	 * @return ArrayList<String> The list of messages.
 	 */
-	public ArrayList<String> get(String key) {
+	public Map<String, String> get(String key) {
 		return this.messages.get(key);
 	}
 
+	public String get(String key, String subkey) {
+		return this.messages.get(key).get(subkey);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @return
+	 */
+	@Override
+	public String toString() {
+		String toRet = "{";
+
+		for (String key : this.messages.keySet())
+			toRet += String.format("%1$s: \"%2$s\", ", key, this.messages.get(key));
+
+		toRet = toRet.substring(0, toRet.length() - 2) + "}";
+
+		return toRet;
+	}
 	// PROTECTED METHODS
 
 	/**
@@ -169,7 +224,7 @@ public class MessageBag {
 	 * {@link #messages} variable.
 	 */
 	@SuppressWarnings("unchecked")
-	protected HashMap<String, ArrayList<String>> get() {
-		return (HashMap<String, ArrayList<String>>) this.messages.clone();
+	protected HashMap<String, Map<String, String>> get() {
+		return (HashMap<String, Map<String, String>>) Map.copyOf(this.messages);
 	}
 }

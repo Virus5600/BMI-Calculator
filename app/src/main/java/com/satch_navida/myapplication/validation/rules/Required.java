@@ -1,5 +1,8 @@
 package com.satch_navida.myapplication.validation.rules;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.HashMap;
 
 /**
@@ -17,25 +20,15 @@ public class Required extends Rule implements RuleInterface {
 
 	/**
 	 * Creates an instance of {@link Rule}, containing all the necessary parameters: the
-	 * {@code key} and {@code value}, and some optional parameter: {@code message}.<br>
+	 * {@code key} and {@code value}, and optional parameters: {@code message} and {@code validatorValues}.<br>
 	 *
 	 * @param key A unique identifier (ID) of value being tested.
 	 * @param value The value that will be tested.
 	 * @param message A message that will be displayed when the test fails.
+	 * @param validatorValues An array of {@link Object}s that will be used to test against the {@code value}.
 	 */
-	public Required(String key, Object value, String message) {
-		super(key, value, message);
-	}
-
-	/**
-	 * Creates an instance of {@link Rule}, containing all the necessary parameters: the
-	 * {@code key} and {@code value}.<br>
-	 *
-	 * @param key A unique identifier (ID) of value being tested.
-	 * @param value The value that will be tested.
-	 */
-	public Required(String key, Object value) {
-		super(key, value);
+	public Required(@NotNull String key, @NotNull Object value, @Nullable String message, @Nullable Object[] validatorValues) {
+		super(key, value, message, validatorValues);
 	}
 
 	// PUBLIC METHOD

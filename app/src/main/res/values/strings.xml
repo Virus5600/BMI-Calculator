@@ -9,4 +9,7 @@
 
 	<!-- BUTTONS -->
 	<string name="submit">Submit</string>
+
+	<!-- ALERTS -->
+	<string name="alert_title">BMI Calculated</string>
 </resources>

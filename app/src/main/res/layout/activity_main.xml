@@ -57,7 +57,6 @@
                 android:layout_height="match_parent"
                 android:orientation="horizontal">
 
-                <!--suppress AndroidUnknownAttribute -->
                 <EditText
                     android:id="@+id/weight_value"
                     android:layout_width="0dp"
@@ -66,7 +65,7 @@
                     android:autofillHints="Weight of the body"
                     android:ems="10"
                     android:hint="@string/weight_label"
-                    android:inputType="number"
+                    android:inputType="numberDecimal"
                     android:textColorHint="#78909C"
                     android:visibility="visible"
                     tools:ignore="DuplicateSpeakableTextCheck" />
@@ -82,13 +81,34 @@
                     tools:visibility="visible" />
             </LinearLayout>
 
-            <TextView
-                android:id="@+id/weight_error_msg"
+            <LinearLayout
+                android:id="@+id/weight_err_msg_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:gravity="center"
-                android:textAppearance="@style/TextAppearance.AppCompat.Small"
-                android:visibility="visible" />
+                android:orientation="horizontal">
+
+                <!--suppress AndroidUnknownAttribute -->
+                <TextView
+                    android:id="@+id/weight_value_error_msg"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Small"
+                    android:visibility="visible" />
+
+                <TextView
+                    android:id="@+id/weight_spinner_error_msg"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Small"
+                    android:visibility="visible" />
+
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/height_label"
@@ -106,15 +126,14 @@
                 android:layout_height="match_parent"
                 android:orientation="horizontal">
 
-                <!--suppress AndroidUnknownAttribute -->
                 <EditText
                     android:id="@+id/height_value"
                     android:layout_width="0dp"
                     android:layout_height="48dp"
                     android:layout_weight="1"
                     android:autofillHints="Height of the body"
-                    android:hint="@string/weight_label"
-                    android:inputType="number"
+                    android:hint="@string/height_label"
+                    android:inputType="numberDecimal"
                     android:textColorHint="#78909C"
                     android:visibility="visible"
                     tools:ignore="DuplicateSpeakableTextCheck" />
@@ -125,17 +144,37 @@
                     android:layout_height="48dp"
                     android:layout_weight="1"
                     android:entries="@array/height_types"
-                    android:visibility="visible"
-                    tools:visibility="visible" />
+                    android:visibility="visible"/>
             </LinearLayout>
 
-            <TextView
-                android:id="@+id/height_error_msg"
+            <LinearLayout
+                android:id="@+id/height_err_msg_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:gravity="center"
-                android:textAppearance="@style/TextAppearance.AppCompat.Small"
-                android:visibility="visible" />
+                android:orientation="horizontal">
+
+                <!--suppress AndroidUnknownAttribute -->
+                <TextView
+                    android:id="@+id/height_value_error_msg"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Small"
+                    android:visibility="visible" />
+
+                <TextView
+                    android:id="@+id/height_spinner_error_msg"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Small"
+                    android:visibility="visible" />
+
+            </LinearLayout>
         </LinearLayout>
 
         <Button
